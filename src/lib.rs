@@ -110,7 +110,7 @@ impl JitoJsonRpcSDK {
             .map_err(|e| anyhow!("Request error: {}", e))
     }
 
-    pub async fn send_bundle(&self, params: Option<Value>, uuid: Option<&str>) -> Result<Value, anyhow::Error> {
+    pub async fn send_bundle(&self, params: Option<Value>, encoding: String, uuid: Option<&str>) -> Result<Value, anyhow::Error> {
         let mut endpoint = "/bundles".to_string();
         
         if let Some(uuid) = uuid {
@@ -130,9 +130,14 @@ impl JitoJsonRpcSDK {
             },
             _ => return Err(anyhow!("Invalid bundle format: expected an array of transactions")),
         };
+
+        let encoding = match encoding.as_str() {
+            "base58" | "base64" => encoding,
+            _ => return Err(anyhow!("Invalid encoding: expected 'base58' or 'base64'")),
+        };
     
         // Wrap the transactions array in another array
-        let params = json!([transactions]);
+        let params = json!([transactions, {"encoding": encoding}]);
     
         // Send the wrapped transactions array
         self.send_request(&endpoint, "sendBundle", Some(params))
